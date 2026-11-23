@@ -1,0 +1,28 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      LAB_DATABASE_URL: sqlite:////data/ethicml.sqlite3
+    volumes:
+      - lab-data:/data
+    ports:
+      - "127.0.0.1:${LAB_BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        LAB_API_URL: http://backend:8000
+    environment:
+      LAB_API_URL: http://backend:8000
+    ports:
+      - "127.0.0.1:${LAB_FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+volumes:
+  lab-data:
